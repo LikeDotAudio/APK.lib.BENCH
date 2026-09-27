@@ -4,7 +4,7 @@
 |---|---|
 | **Crate** | `apkaudio-bench` (`SRC/`), member of the `discovery/SRC` workspace |
 | **Container** | none — a library, like the other `lib:*` stacks |
-| **Written by** | `plugin:VISA` (`apk-visa`) |
+| **Written by** | `PLUGIN:VISA` (`apk-visa`) |
 | **Read by** | the orchestrator's panel builder (`BareMetal/SRC/Core/ORCHESTRATOR:hunter:VISA`) |
 
 What the VISA plugin writes and the panel builder reads, in one place because since

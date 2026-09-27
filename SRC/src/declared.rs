@@ -52,7 +52,8 @@ fn model_key(dir_name: &str) -> &str {
 }
 
 /// Every model's capability sheet: `(model key, model directory, sheet)`, from
-/// `<library>/<Family>/<Model>/<Model>.gui`. Sorted, and the FIRST sheet for a
+/// `<library>/INSTRUMENT:<Family>/<Model>/<Model>.gui` (a bare `<Family>/` reads the
+/// same: the folder name is never the type, the sheet's `type` is). Sorted, and the FIRST sheet for a
 /// key wins, so two benches serving the same commit read the same answer.
 ///
 /// `<Model>.gui` is located by extension: the folder may carry a manufacturer

@@ -11,7 +11,10 @@
 //! - [`declared`] — instruments wired to the bench that no probe can find,
 //!   read from their capability sheets in the instrument library.
 //! - [`trigger`] — whether a GUI press payload means "go".
+//! - [`dev_id`] — the `Dev<id>` in a device topic, read off the instrument's
+//!   address (or LAN serial) so every process spells it the same way.
 
 pub mod declared;
+pub mod dev_id;
 pub mod device_doc;
 pub mod trigger;
