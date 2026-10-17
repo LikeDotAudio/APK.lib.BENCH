@@ -1,5 +1,5 @@
 [package]
-workspace = "../../../discovery/SRC"
+workspace = "../../../DISCOVERY.Engine/SRC"
 name = "apkaudio-bench"
 version = "0.1.0"
 edition.workspace = true

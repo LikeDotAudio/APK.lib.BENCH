@@ -17,7 +17,7 @@
 //! ```
 //!
 //! THE LIBRARY, NOT THE REPOSITORY, IS THE ARGUMENT. Every function here takes
-//! the instrument library directory itself (`PODS/POD:THICK/INSTRUMENTS` on a
+//! the instrument library directory itself (`PODS/POD.THICK/INSTRUMENTS` on a
 //! checkout, `/opt/apk/Instruments` in the VISA plugin's image,
 //! `/app/Instruments` on the node). Finding it is each process's business; the
 //! orchestrator resolves it with `library_root`, the plugin from its env.
@@ -52,7 +52,7 @@ fn model_key(dir_name: &str) -> &str {
 }
 
 /// Every model's capability sheet: `(model key, model directory, sheet)`, from
-/// `<library>/INSTRUMENT:<Family>/<Model>/<Model>.gui` (a bare `<Family>/` reads the
+/// `<library>/INSTRUMENT.<Family>/<Model>/<Model>.gui` (a bare `<Family>/` reads the
 /// same: the folder name is never the type, the sheet's `type` is). Sorted, and the FIRST sheet for a
 /// key wins, so two benches serving the same commit read the same answer.
 ///
