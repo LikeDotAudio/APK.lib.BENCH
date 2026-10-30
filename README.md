@@ -1,23 +1,22 @@
 # LIB.BENCH — the instrument bench's shared vocabulary
 
+`apkaudio-bench` (`SRC/`) is the one place where the VISA plugin, which writes the instrument bench,
+and the orchestrator's panel builder, which reads it, agree on what an instrument looks like. It is
+a Rust library with one dependency, `serde_json`. It runs no process, opens no socket and publishes
+nothing.
+
 | | |
 |---|---|
-| **Crate** | `apkaudio-bench` (`SRC/`), member of the `discovery/SRC` workspace |
-| **Container** | none — a library, like the other `lib:*` stacks |
+| **Crate** | `apkaudio-bench`, a member of the `PODS/POD.THICK/DISCOVERY.Engine/SRC` workspace |
+| **Container** | none — a library, like the other `LIB.*` repos |
 | **Written by** | `PLUGIN.VISA` (`apk-visa`) |
-| **Read by** | the orchestrator's panel builder (`BareMetal/SRC/Core/ORCHESTRATOR:hunter:VISA`) |
+| **Read by** | `NODE.BareMetal/SRC/Core/ORCHESTRATOR:hunter:VISA` |
 
-What the VISA plugin writes and the panel builder reads, in one place because since
-PLAN-3316.01 (step 6.6) they are two processes:
+- [Principles](Documentation/🏛Philosophy/PRINCIPLES.md) — the rules this crate keeps, and where it breaks them.
+- [Architecture](Documentation/🧩Manual and Artifacts/ARCHITECTURE.md) — the four modules and how a device document flows through them.
+- [Delivery](Documentation/🌍Publishing/DELIVERY.md) — how it is built and which images carry it.
 
-- `device_doc` — one instrument, one retained JSON document (was `apkaudio_visa::device_doc`,
-  still re-exported there under that name).
-- `declared` — instruments wired to the bench that no probe can find, read from their
-  capability sheets in `PODS/POD.THICK/INSTRUMENTS`.
-- `trigger` — whether a GUI press payload (`{"value":1}`, `1`, `true`, `scan`) means "go".
-
-Only `serde_json`: a reader of the bench must not inherit what it takes to drive one.
-There is deliberately no `config.ini` here — this is not a module and publishes nothing.
+Remote: https://github.com/LikeDotAudio/APK.lib.BENCH
 
 <!-- wiki:smoke -->
 **Smoke test** — ✅ PASS 1/1 since 2026-10-30 12:50 EDT — [results](Documentation/%F0%9F%A7%A9Manual%20and%20Artifacts/SMOKE.md)
