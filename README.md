@@ -18,3 +18,7 @@ PLAN-3316.01 (step 6.6) they are two processes:
 
 Only `serde_json`: a reader of the bench must not inherit what it takes to drive one.
 There is deliberately no `config.ini` here — this is not a module and publishes nothing.
+
+<!-- wiki:smoke -->
+**Smoke test** — ✅ PASS 1/1 since 2026-10-30 12:50 EDT — [results](Documentation/%F0%9F%A7%A9Manual%20and%20Artifacts/SMOKE.md)
+<!-- /wiki:smoke -->
