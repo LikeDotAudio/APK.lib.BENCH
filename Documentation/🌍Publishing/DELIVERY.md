@@ -17,6 +17,11 @@ LIB.BENCH is not shipped on its own. It is compiled into the binaries that depen
 - **After an edit:** rebuild the images above (`up-stack.sh` for the stacks that carry them), then
   commit in this repository and bump the submodule pointer in APK.audio.
 
+## Delivered 2026-10-31: portable file names (no `:` `|` or case twins)
+
+- The monorepo now checks out on Windows and macOS: no tracked name holds `<>:"|?*`, a trailing dot or space, a device name or a case-only twin. Colon folders became dot folders (the POD.x convention).
+- References to the renamed folders updated (`Baremetal.Manager`, `ORCHESTRATOR.hunter.VISA`). Docs/comments only, no behaviour change.
+
 ## Delivered from the 2026-10-30 audit
 
 - **The serial rule as data** — `SRC/vectors/usable_serial.json` (version 1): the rule in words, 18 placeholder spellings and 9 identities with the expected `usable_serial` output (trimmed, case preserved), including the two spellings (`null`, `-`) NODE.BareMetal's Python treats differently, marked as drift. `device_doc` test `placeholders_are_the_contract_rule` now reads it with `include_str!`, so it always runs (it still also checks `contracts/vectors/identity.json` when the monorepo is around). NODE.BareMetal's `instrument_launcher.py` `usable_serial` testing against the same file (or calling `apkaudio_contracts.identity.is_placeholder_serial`): handoff filed.
