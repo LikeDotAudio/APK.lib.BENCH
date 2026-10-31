@@ -17,13 +17,13 @@ instruments, what counts as a button press — lives here, once, and in neither 
    (`pruned`, `SRC/src/device_doc.rs:56`).
 4. **Unreachable is dead; trust decays.** A verification is believed for `VERIFIED_TTL_SECS` = 300 s
    (`SRC/src/device_doc.rs:145`). A document with no `verified_at` is never fresh (`is_fresh`,
-   `SRC/src/device_doc.rs:212`). A document found on the retained tree at boot is adopted without
-   its trust (`adopt`, `SRC/src/device_doc.rs:278`). A rescan withdraws all presence at once
-   (`distrust_fields`, `SRC/src/device_doc.rs:252`).
-5. **Identity is the serial, never the address.** `same_instrument` (`SRC/src/device_doc.rs:181`)
+   `SRC/src/device_doc.rs:218`). A document found on the retained tree at boot is adopted without
+   its trust (`adopt`, `SRC/src/device_doc.rs:284`). A rescan withdraws all presence at once
+   (`distrust_fields`, `SRC/src/device_doc.rs:258`).
+5. **Identity is the serial, never the address.** `same_instrument` (`SRC/src/device_doc.rs:187`)
    requires a matching usable serial, or matching make and model when neither side has one; an
    answer with no identity is never the instrument. A placeholder serial such as `0` is not an
-   identity (`usable_serial`, `SRC/src/device_doc.rs:157`).
+   identity (`usable_serial`, `SRC/src/device_doc.rs:168`, the contract's `is_placeholder_serial` held to `contracts/vectors/identity.json`).
 6. **A device id names where the instrument is, not the order it was heard in.** `dev_id`
    (`SRC/src/dev_id.rs:27`) reads it off the VISA resource: a GPIB or serial address is a cable and
    names the device; a LAN address is a lease, so a LAN instrument is named for its serial.

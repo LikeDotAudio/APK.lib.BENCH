@@ -149,18 +149,24 @@ pub const VERIFIED_AT: &str = "verified_at";
 
 /// What an instrument answers when it has no serial to give. `0` from a 34401A
 /// behind a GPIB gateway is the query failing politely, not a serial.
-const PLACEHOLDER_SERIALS: [&str; 9] = [
-    "", "0", "00", "000000", "0000000000", "none", "n/a", "unknown", "null",
-];
+///
+/// THIS IS THE CONTRACT'S RULE, restated because this crate is serde_json-only:
+/// `apkaudio_contracts::identity::is_placeholder_serial` (contracts/rust/src/
+/// identity.rs) — all zeros of any length (the empty string included), `none`,
+/// `n/a`, `na`, `unknown`, case-insensitive. The test `placeholders_are_the_
+/// contract_rule` holds it to `contracts/vectors/identity.json`; widen the
+/// contract, never this copy.
+const PLACEHOLDER_WORDS: [&str; 4] = ["none", "n/a", "na", "unknown"];
+
+/// Is this serial a placeholder (the contract's `is_placeholder_serial`)?
+pub fn is_placeholder_serial(raw: &str) -> bool {
+    let t = raw.trim();
+    t.chars().all(|c| c == '0') || PLACEHOLDER_WORDS.iter().any(|p| t.eq_ignore_ascii_case(p))
+}
 
 /// The serial if it is an identity, `None` for a placeholder.
 pub fn usable_serial(raw: &str) -> Option<String> {
-    let trimmed = raw.trim();
-    if PLACEHOLDER_SERIALS.iter().any(|p| trimmed.eq_ignore_ascii_case(p)) {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
+    if is_placeholder_serial(raw) { None } else { Some(raw.trim().to_string()) }
 }
 
 /// Unix seconds now.
@@ -284,6 +290,46 @@ pub fn adopt(prefix: &str, doc: Map<String, Value>) -> Option<String> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// The placeholder rule is the contract's: every `deviceId` vector in
+    /// contracts/vectors/identity.json that carries a serial says whether that
+    /// serial was an identity (the id is `proto:<serial>`) or fell through to
+    /// the address. Skipped in a standalone clone, which has no contracts/.
+    #[test]
+    fn placeholders_are_the_contract_rule() {
+        // The contract's own spelled-out cases (identity.rs is_placeholder_serial).
+        for p in ["", "  ", "0", "00", "0000", "000000", "0000000000", "none", "N/A", "na", "NA", "Unknown"] {
+            assert!(usable_serial(p).is_none(), "{p:?} is a placeholder in the contract");
+        }
+        for s in ["MY12345678", "null", "0x0", "10", "-"] {
+            assert!(usable_serial(s).is_some(), "{s:?} is not a placeholder in the contract");
+        }
+        let Some(path) = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .map(|d| d.join("contracts/vectors/identity.json"))
+            .find(|p| p.is_file())
+        else {
+            eprintln!("contracts/vectors/identity.json not found (standalone clone): skipped");
+            return;
+        };
+        let vectors: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let sanitize = |s: &str| -> String {
+            s.chars()
+                .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | ':' | '-') { c } else { '-' })
+                .collect()
+        };
+        let mut seen = 0;
+        for v in vectors["deviceId"].as_array().unwrap() {
+            let input = &v["input"];
+            let Some(serial) = input["serial"].as_str() else { continue };
+            let proto = input["protocol"].as_str().unwrap();
+            let id = v["deviceId"].as_str().unwrap();
+            let by_serial = id == format!("{proto}:{}", sanitize(serial.trim()));
+            assert_eq!(usable_serial(serial).is_some(), by_serial, "vector {v}");
+            seen += 1;
+        }
+        assert!(seen >= 5, "identity.json lost its serial vectors");
+    }
 
     #[test]
     fn empty_fields_are_absent_not_empty() {
