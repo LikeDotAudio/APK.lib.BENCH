@@ -4,8 +4,10 @@ LIB.BENCH is not shipped on its own. It is compiled into the binaries that depen
 
 - **Repository:** https://github.com/LikeDotAudio/APK.lib.BENCH (private), a submodule of the
   APK.audio monorepo at `PODS/POD.THICK/LIBRARY/LIB.BENCH`.
-- **Build:** as a member of the Cargo workspace at `PODS/POD.THICK/DISCOVERY.Engine/SRC`
-  (`Cargo.toml` lists `../../LIBRARY/LIB.BENCH/SRC`). It does not build outside that checkout.
+- **Build:** standalone (`cargo test` in `SRC/` — the one check; `serde_json` is the only
+  dependency), and as a member of the Cargo workspace at `PODS/POD.THICK/DISCOVERY.Engine/SRC`
+  through the link `SRC/members/LIB.BENCH`. PLUGIN.VISA takes it by git `rev` (patched back to the
+  local path in the engine); the orchestrator by relative path.
 - **Images:** the build stages that compile the workspace copy `PODS/POD.THICK/LIBRARY/LIB.BENCH/SRC`
   into the image: `PODS/POD.THICK/NODE.BareMetal/Docker/Dockerfile` and
   `PODS/POD.databus/DATABUS.Broker.MQTT/Docker/Dockerfile`. Only `SRC/` is copied; the root
@@ -14,3 +16,10 @@ LIB.BENCH is not shipped on its own. It is compiled into the binaries that depen
   binaries. No container, port, volume or config file of its own.
 - **After an edit:** rebuild the images above (`up-stack.sh` for the stacks that carry them), then
   commit in this repository and bump the submodule pointer in APK.audio.
+
+## Delivered from the 2026-10-30 audit
+
+- **The serial rule as data** — `SRC/vectors/usable_serial.json` (version 1): the rule in words, 18 placeholder spellings and 9 identities with the expected `usable_serial` output (trimmed, case preserved), including the two spellings (`null`, `-`) NODE.BareMetal's Python treats differently, marked as drift. `device_doc` test `placeholders_are_the_contract_rule` now reads it with `include_str!`, so it always runs (it still also checks `contracts/vectors/identity.json` when the monorepo is around). NODE.BareMetal's `instrument_launcher.py` `usable_serial` testing against the same file (or calling `apkaudio_contracts.identity.is_placeholder_serial`): handoff filed.
+- **Checked-in sheet fixture** — `SRC/fixtures/library/` replaces the `CARGO_MANIFEST_DIR/../../../INSTRUMENTS` lookup that skipped silently in a standalone clone; `the_fixture_library_declares_the_switch_matrix` checks the declared block, `listen_only`, `on_connect` resolved through the KOMAND table (and an unknown command skipped), the manufacturer-prefixed folder, and sheet order.
+- **Owned document store** — `device_doc::DocStore` (`new`, `global`, `put`, `patch`, `forget`, `get`, `distrust`, `adopt`); the free functions are now exactly `DocStore::global().…`, so PLUGIN.VISA and the orchestrator compile unchanged. Test `an_owned_store_is_not_the_global_one`. Callers moving to owned stores where two components share a process: handoff to PLUGIN.VISA filed.
+- **Tests run per change as one command** — no workflow here (the root CI verifies nothing on purpose); the check is `cargo test` in `SRC/`. Verified: a copy of `SRC/` alone builds and passes 21 tests offline; `cargo test -p apkaudio-bench` in the engine workspace passes too.

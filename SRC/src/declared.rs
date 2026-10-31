@@ -203,19 +203,30 @@ pub fn declared_devices(library: &Path) -> Vec<Declared> {
 mod tests {
     use super::*;
 
-    /// The shipped library, where this crate was compiled out of a checkout.
-    fn shipped() -> Option<PathBuf> {
-        let library = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../INSTRUMENTS");
-        library.is_dir().then_some(library)
+    /// A minimal library checked in beside this crate (`SRC/fixtures/library`),
+    /// so the sheet-format test runs in a standalone clone too. It used to read
+    /// `CARGO_MANIFEST_DIR/../../../INSTRUMENTS` and skip silently when that
+    /// sibling repository was absent (2026-10-30 audit, finding 5).
+    fn fixture() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/library")
     }
 
     #[test]
-    fn the_shipped_library_declares_the_switch_matrix() {
-        let Some(library) = shipped() else { return };
+    fn the_fixture_library_declares_the_switch_matrix() {
+        let library = fixture();
         let found = declared_devices(&library);
-        let matrix = found.iter().find(|d| d.model == "3235").expect("the HP 3235 is declared");
+        assert_eq!(found.len(), 1, "only the 3235 has a `declared` block: {found:?}");
+        let matrix = &found[0];
+        assert_eq!((matrix.dtype.as_str(), matrix.model.as_str()), ("Router", "3235"));
         assert!(matrix.resource.contains("gpib"), "{}", matrix.resource);
-        assert!(!sheets(&library).is_empty());
+        assert!(matrix.listen_only);
+        // `on_connect` names commands; the KOMAND table resolves them, and a
+        // name it does not hold is skipped rather than sent as text.
+        assert_eq!(matrix.on_connect, vec!["OPEN 000-999".to_string()]);
+        // The manufacturer prefix on the folder is not the model key.
+        assert_eq!(model_directory(&library, "3235").unwrap().file_name().unwrap(), "HP_3235");
+        let keys: Vec<String> = sheets(&library).into_iter().map(|(k, _, _)| k).collect();
+        assert_eq!(keys, vec!["34401A".to_string(), "3235".to_string()]);
     }
 
     #[test]

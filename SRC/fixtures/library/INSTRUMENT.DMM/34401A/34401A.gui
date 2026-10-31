@@ -1,0 +1,6 @@
+{
+  "model": "34401A",
+  "manufacturer": "HEWLETT-PACKARD",
+  "type": "DMM",
+  "notes": "Fixture: a discoverable instrument — it has a sheet but no `declared` block, so it is not declared."
+}

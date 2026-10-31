@@ -32,7 +32,7 @@ The topic tree is `APK.audio/System/Protocols/visa/Device/<Type>/<Model>/Dev<id>
    `verified_at`, and publishes the string returned by `put` as one retained payload on the
    device node. `Write` and `Read` below the node remain command and reply channels.
 2. **Heartbeat (writer).** When one field changes (`reachable` goes to 0), the writer calls
-   `patch(prefix, fields)`: read the last document it published from the process store, merge,
+   `patch(prefix, fields)`: read the last document it published from its `DocStore` (the process-global one by default), merge,
    prune empty keys, return the whole payload to publish. When `stale_fields` reports a lapsed
    verification, the writer patches presence away.
 3. **Rescan or boot (writer).** `distrust(prefix)` removes presence from every held document;
@@ -50,5 +50,15 @@ The topic tree is `APK.audio/System/Protocols/visa/Device/<Type>/<Model>/Dev<id>
 
 ## Tests
 
-`cargo test -p apkaudio-bench` from `PODS/POD.THICK/DISCOVERY.Engine/SRC`. Tests are inline in
-each module under `#[cfg(test)]`.
+`cargo test` in `SRC/` (standalone: `serde_json` only, no workspace), or `cargo test -p apkaudio-bench`
+from `PODS/POD.THICK/DISCOVERY.Engine/SRC` (a member through `SRC/members/LIB.BENCH`). Tests are
+inline in each module under `#[cfg(test)]`; their data is checked in beside the crate:
+`SRC/fixtures/library/` (a minimal instrument library: a declared, listen-only 3235 with a KOMAND
+table, and a discoverable 34401A) and `SRC/vectors/usable_serial.json` (the serial rule).
+
+## The document store
+
+`DocStore` is an owned value (`DocStore::new()`; `put`, `patch`, `forget`, `get`, `distrust`,
+`adopt`). The free functions of the same names act on `DocStore::global()`, the process-wide store
+existing callers use; a component that must not share documents with another in the same process
+creates and passes its own.

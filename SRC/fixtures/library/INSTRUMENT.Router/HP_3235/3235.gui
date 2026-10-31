@@ -1,0 +1,11 @@
+{
+  "model": "3235",
+  "manufacturer": "HP / Agilent / Keysight",
+  "type": "Router",
+  "notes": "Fixture: the minimal shape of a declared, listen-only instrument (from INSTRUMENTS/INSTRUMENT.Router/3235/3235.gui).",
+  "declared": {
+    "resource": "TCPIP::44.44.44.222::gpib7,10::INSTR",
+    "listen_only": true,
+    "on_connect": ["Open_All", "No_Such_Command"]
+  }
+}

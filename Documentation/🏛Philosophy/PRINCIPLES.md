@@ -23,7 +23,7 @@ instruments, what counts as a button press — lives here, once, and in neither 
 5. **Identity is the serial, never the address.** `same_instrument` (`SRC/src/device_doc.rs:187`)
    requires a matching usable serial, or matching make and model when neither side has one; an
    answer with no identity is never the instrument. A placeholder serial such as `0` is not an
-   identity (`usable_serial`, `SRC/src/device_doc.rs:168`, the contract's `is_placeholder_serial` held to `contracts/vectors/identity.json`).
+   identity (`usable_serial`, `SRC/src/device_doc.rs`, the contract's `is_placeholder_serial`). The rule is published as data in `SRC/vectors/usable_serial.json`, which every copy (this crate; NODE.BareMetal's Python) tests against.
 6. **A device id names where the instrument is, not the order it was heard in.** `dev_id`
    (`SRC/src/dev_id.rs:27`) reads it off the VISA resource: a GPIB or serial address is a cable and
    names the device; a LAN address is a lease, so a LAN instrument is named for its serial.
@@ -37,9 +37,5 @@ instruments, what counts as a button press — lives here, once, and in neither 
 
 ## Where it breaks them
 
-- `SRC/Cargo.toml` names `workspace = "../../../DISCOVERY.Engine/SRC"`, so the crate builds only
-  inside an APK.audio checkout, not from this repository alone.
-- The test `the_shipped_library_declares_the_switch_matrix` (`SRC/src/declared.rs:213`) reads the
-  real instrument library at `../../../INSTRUMENTS` and silently passes when it is absent.
-- The document store is a process-wide `Mutex<HashMap>` (`SRC/src/device_doc.rs:50`); each process
-  owns the documents it wrote, and two writers of one device in one process share that store.
+- NODE.BareMetal's `instrument_launcher.py` still has its own `usable_serial` with a wider placeholder list (`null`, `-`) and upper-casing — a drift `SRC/vectors/usable_serial.json` now names; aligning it is handed off.
+- The free functions in `device_doc` use one process-global `DocStore`; a component that wants isolation must create its own `DocStore` (`DocStore::new()`) and pass it.

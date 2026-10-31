@@ -47,9 +47,95 @@ pub const LEGACY_LEAVES: [&str; 26] = [
     "presence_topic", "Write", "Read",
 ];
 
-fn store() -> &'static Mutex<HashMap<String, Map<String, Value>>> {
-    static STORE: OnceLock<Mutex<HashMap<String, Map<String, Value>>>> = OnceLock::new();
-    STORE.get_or_init(Default::default)
+/// The documents one owner has published, by device topic prefix.
+///
+/// AN OWNED VALUE (2026-10-30 audit, finding 3). The free functions below
+/// ([`put`], [`patch`], [`forget`], [`get`], [`distrust`], [`adopt`]) work on
+/// ONE process-global store, [`DocStore::global`], which is how two components
+/// in one process touching the same prefix used to share state without
+/// knowing it. A component that wants its own documents creates a `DocStore`
+/// and passes it; the free functions stay for existing callers and are exactly
+/// `DocStore::global().<same method>`.
+#[derive(Debug, Default)]
+pub struct DocStore {
+    docs: Mutex<HashMap<String, Map<String, Value>>>,
+}
+
+impl DocStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// The process-wide store the free functions use.
+    pub fn global() -> &'static DocStore {
+        static STORE: OnceLock<DocStore> = OnceLock::new();
+        STORE.get_or_init(DocStore::new)
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, Map<String, Value>>> {
+        self.docs.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Replace this device's document and return the payload to publish.
+    pub fn put(&self, prefix: &str, doc: Map<String, Value>) -> String {
+        let doc = pruned(doc);
+        let payload = Value::Object(doc.clone()).to_string();
+        self.lock().insert(prefix.to_string(), doc);
+        payload
+    }
+
+    /// Merge fields into a device this store holds, and return the whole new
+    /// document to publish. `None` for a device it never held — there is no
+    /// document to amend, and inventing one from a single field is how a row
+    /// with nothing but `reachable = 0` appears — and `None` when the fields
+    /// change nothing, so a check-in that learned nothing new says nothing.
+    pub fn patch(&self, prefix: &str, fields: &[(&str, Value)]) -> Option<String> {
+        let mut docs = self.lock();
+        let doc = docs.get_mut(prefix)?;
+        let before = doc.clone();
+        for (k, v) in fields {
+            match v {
+                Value::Null => {
+                    doc.remove(*k);
+                }
+                Value::String(s) if s.is_empty() => {
+                    doc.remove(*k);
+                }
+                _ => {
+                    doc.insert((*k).to_string(), v.clone());
+                }
+            }
+        }
+        if *doc == before {
+            return None;
+        }
+        Some(Value::Object(doc.clone()).to_string())
+    }
+
+    /// Forget a device (its node is being wiped).
+    pub fn forget(&self, prefix: &str) {
+        self.lock().remove(prefix);
+    }
+
+    /// The document last published for this device, if any.
+    pub fn get(&self, prefix: &str) -> Option<Map<String, Value>> {
+        self.lock().get(prefix).cloned()
+    }
+
+    /// Withdraw all trust from a device this store holds (see
+    /// [`distrust_fields`]). The payload to publish, or `None` when there is
+    /// no document or it already said all of that.
+    pub fn distrust(&self, prefix: &str) -> Option<String> {
+        let doc = self.get(prefix)?;
+        self.patch(prefix, &distrust_fields(&doc))
+    }
+
+    /// Take a document found on the retained tree (another run wrote it) into
+    /// this store WITHOUT its trust (see the free [`adopt`]).
+    pub fn adopt(&self, prefix: &str, doc: Map<String, Value>) -> Option<String> {
+        self.lock().insert(prefix.to_string(), doc);
+        self.distrust(prefix)
+    }
 }
 
 /// Drop empty strings: an absent key is how the object says "nothing".
@@ -58,50 +144,24 @@ fn pruned(mut doc: Map<String, Value>) -> Map<String, Value> {
     doc
 }
 
-/// Replace this device's document and return the payload to publish.
+/// [`DocStore::put`] on the process-global store.
 pub fn put(prefix: &str, doc: Map<String, Value>) -> String {
-    let doc = pruned(doc);
-    let payload = Value::Object(doc.clone()).to_string();
-    store().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.to_string(), doc);
-    payload
+    DocStore::global().put(prefix, doc)
 }
 
-/// Merge fields into a device this process has published, and return the
-/// whole new document to publish. `None` for a device it never published —
-/// there is no document to amend, and inventing one from a single field is how
-/// a row with nothing but `reachable = 0` appears — and `None` when the fields
-/// change nothing, so a check-in that learned nothing new says nothing.
+/// [`DocStore::patch`] on the process-global store.
 pub fn patch(prefix: &str, fields: &[(&str, Value)]) -> Option<String> {
-    let mut docs = store().lock().unwrap_or_else(|e| e.into_inner());
-    let doc = docs.get_mut(prefix)?;
-    let before = doc.clone();
-    for (k, v) in fields {
-        match v {
-            Value::Null => {
-                doc.remove(*k);
-            }
-            Value::String(s) if s.is_empty() => {
-                doc.remove(*k);
-            }
-            _ => {
-                doc.insert((*k).to_string(), v.clone());
-            }
-        }
-    }
-    if *doc == before {
-        return None;
-    }
-    Some(Value::Object(doc.clone()).to_string())
+    DocStore::global().patch(prefix, fields)
 }
 
-/// Forget a device (its node is being wiped).
+/// [`DocStore::forget`] on the process-global store.
 pub fn forget(prefix: &str) {
-    store().lock().unwrap_or_else(|e| e.into_inner()).remove(prefix);
+    DocStore::global().forget(prefix)
 }
 
-/// The document last published for this device, if any.
+/// [`DocStore::get`] on the process-global store.
 pub fn get(prefix: &str) -> Option<Map<String, Value>> {
-    store().lock().unwrap_or_else(|e| e.into_inner()).get(prefix).cloned()
+    DocStore::global().get(prefix)
 }
 
 /// A document from `(key, text)` pairs — the shape the scanners hold.
@@ -159,6 +219,10 @@ pub const VERIFIED_AT: &str = "verified_at";
 const PLACEHOLDER_WORDS: [&str; 4] = ["none", "n/a", "na", "unknown"];
 
 /// Is this serial a placeholder (the contract's `is_placeholder_serial`)?
+///
+/// Vectors: `SRC/vectors/usable_serial.json` — the ONE file every copy of
+/// this rule (this crate; NODE.BareMetal's Python `usable_serial`) tests
+/// against.
 pub fn is_placeholder_serial(raw: &str) -> bool {
     let t = raw.trim();
     t.chars().all(|c| c == '0') || PLACEHOLDER_WORDS.iter().any(|p| t.eq_ignore_ascii_case(p))
@@ -269,21 +333,17 @@ pub fn distrust_fields(doc: &Map<String, Value>) -> Vec<(&'static str, Value)> {
     fields
 }
 
-/// Withdraw all trust from a device this process holds (see
-/// [`distrust_fields`]). The payload to publish, or `None` when there is no
-/// document or it already said all of that.
+/// [`DocStore::distrust`] on the process-global store.
 pub fn distrust(prefix: &str) -> Option<String> {
-    let doc = get(prefix)?;
-    patch(prefix, &distrust_fields(&doc))
+    DocStore::global().distrust(prefix)
 }
 
 /// Take a document found on the retained tree (another run wrote it) into this
 /// process's store WITHOUT its trust: nothing from before this process started
 /// is present until it answers again. Returns the payload to publish when that
-/// changed the document.
+/// changed the document. [`DocStore::adopt`] on the process-global store.
 pub fn adopt(prefix: &str, doc: Map<String, Value>) -> Option<String> {
-    store().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.to_string(), doc);
-    distrust(prefix)
+    DocStore::global().adopt(prefix, doc)
 }
 
 #[cfg(test)]
@@ -291,18 +351,39 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    const USABLE_SERIAL_VECTORS: &str = include_str!("../vectors/usable_serial.json");
+
+    /// Two owned stores are two worlds: what one holds the other does not.
+    #[test]
+    fn an_owned_store_is_not_the_global_one() {
+        let a = DocStore::new();
+        let b = DocStore::new();
+        a.put("x/Dev0", from_pairs([("model", "34401A".to_string())]));
+        assert!(b.get("x/Dev0").is_none());
+        assert!(get("x/Dev0").is_none(), "leaked into the global store");
+        assert!(a.patch("x/Dev0", &[("reachable", json!(1))]).is_some());
+        assert!(b.patch("x/Dev0", &[("reachable", json!(1))]).is_none());
+        a.forget("x/Dev0");
+        assert!(a.get("x/Dev0").is_none());
+    }
+
     /// The placeholder rule is the contract's: every `deviceId` vector in
     /// contracts/vectors/identity.json that carries a serial says whether that
     /// serial was an identity (the id is `proto:<serial>`) or fell through to
     /// the address. Skipped in a standalone clone, which has no contracts/.
     #[test]
     fn placeholders_are_the_contract_rule() {
-        // The contract's own spelled-out cases (identity.rs is_placeholder_serial).
-        for p in ["", "  ", "0", "00", "0000", "000000", "0000000000", "none", "N/A", "na", "NA", "Unknown"] {
+        // The checked-in vectors (SRC/vectors/usable_serial.json) — the one
+        // file every implementation of this rule tests against, in any
+        // language. Always present, so this half runs in a standalone clone.
+        let vectors: Value = serde_json::from_str(USABLE_SERIAL_VECTORS).unwrap();
+        for p in vectors["placeholders"].as_array().unwrap() {
+            let p = p.as_str().unwrap();
             assert!(usable_serial(p).is_none(), "{p:?} is a placeholder in the contract");
         }
-        for s in ["MY12345678", "null", "0x0", "10", "-"] {
-            assert!(usable_serial(s).is_some(), "{s:?} is not a placeholder in the contract");
+        for case in vectors["identities"].as_array().unwrap() {
+            let (raw, want) = (case["raw"].as_str().unwrap(), case["usable"].as_str().unwrap());
+            assert_eq!(usable_serial(raw).as_deref(), Some(want), "{raw:?}");
         }
         let Some(path) = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .ancestors()

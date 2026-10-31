@@ -1,0 +1,16 @@
+{
+  "comment": "THE serial-validity rule, as data. A serial is an identity unless it is a placeholder: after trimming whitespace, all '0' characters (any length, the empty string included), or one of none / n/a / na / unknown (case-insensitive). usable_serial(raw) is the trimmed serial, case PRESERVED, or nothing for a placeholder. Same rule as root contracts identity.is_placeholder_serial (Rust/TS/Python). Implementations that must agree and test against THIS file: LIB.BENCH apkaudio_bench::device_doc::usable_serial (Rust, test placeholders_are_the_contract_rule) and NODE.BareMetal Baremetal:Manager/instrument_launcher.py usable_serial (Python). A caller that compares identities case-insensitively folds case itself; the rule does not. Widen the root contract first, then this file, never one copy.",
+  "version": 1,
+  "placeholders": ["", "  ", "0", " 0 ", "00", "0000", "000000", "0000000000", "none", "None", "NONE", "N/A", "n/a", "na", "NA", "Unknown", "unknown", "\t0\n"],
+  "identities": [
+    { "raw": "MY12345678", "usable": "MY12345678" },
+    { "raw": "  MY44060332 ", "usable": "MY44060332", "why": "trimmed" },
+    { "raw": "my44060332", "usable": "my44060332", "why": "case preserved" },
+    { "raw": "10", "usable": "10", "why": "a zero that is not ALL zeros" },
+    { "raw": "0x0", "usable": "0x0" },
+    { "raw": "null", "usable": "null", "why": "not a placeholder in the contract (instrument_launcher.py's NON_SERIALS lists it: drift)" },
+    { "raw": "-", "usable": "-", "why": "not a placeholder in the contract (instrument_launcher.py's NON_SERIALS lists it: drift)" },
+    { "raw": "none1", "usable": "none1" },
+    { "raw": "N/A2", "usable": "N/A2" }
+  ]
+}
