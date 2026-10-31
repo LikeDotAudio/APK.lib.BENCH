@@ -23,7 +23,7 @@ The instrument bench's shared vocabulary: the one-retained-JSON-per-device docum
 | Boundary Integrity | 3 | `serde_json` only; it *is* the translation layer between the bench and the bus document. |
 | Duplication Control | 2 | The serial rule is published as a vector file; NODE.BareMetal's Python copy still differs until it adopts it (handoff filed). |
 | Testing & Contracts | 3 | 21 unit tests incl. payload shape, a fixture library and the serial vectors; one standalone command (`cargo test` in `SRC/`). |
-| Change management | 2 | `LEGACY_LEAVES` documents the old per-field layout for a one-time wipe (good deprecation). Crate stays at 0.1.0, untagged; consumers pin by `rev` or path. |
+| Change management | 3 | Released and tagged: `bench-v0.2.0` (version 0.2.0); consumers pin the tag |
 
 Score key: 3 meets the standard · 2 minor gaps · 1 significant gaps · 0 absent / violated.
 
@@ -31,4 +31,3 @@ Score key: 3 meets the standard · 2 minor gaps · 1 significant gaps · 0 absen
 1. **Good — the shared kernel is deliberately small.** `SRC/Cargo.toml` allows `serde_json` and nothing else so a reader of the bench never links a driver; `SRC/src/lib.rs:1-20` names one writer and the readers in other processes for each module.
 2. **Good — deprecation of the old topic layout is explicit.** `SRC/src/device_doc.rs` keeps `LEGACY_LEAVES` only so a migrating publisher can wipe the ~26 fossil leaves of the old per-field layout once.
 3. **Rule re-implemented outside the crate (LIB side delivered).** `usable_serial` is re-implemented in `PODS/POD.THICK/NODE.BareMetal/SRC/Baremetal:Manager/instrument_launcher.py:515` with a wider list (`null`, `-`) and upper-casing. `SRC/vectors/usable_serial.json` is now the shared data both test against; the Python side is handed off.
-4. **No versioned release (needs owner).** `SRC/Cargo.toml` is `0.1.0` and the repo has no tags; PLUGIN.VISA pins `rev = "9b71355…"` while the orchestrator uses a relative path.

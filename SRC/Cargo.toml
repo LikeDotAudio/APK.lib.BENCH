@@ -1,6 +1,6 @@
 [package]
 name = "apkaudio-bench"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "The instrument bench's shared vocabulary: the VISA device document, the declared-instrument sheets, the GUI trigger"
 
