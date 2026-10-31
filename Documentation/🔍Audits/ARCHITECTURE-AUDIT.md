@@ -10,11 +10,11 @@ The instrument bench's shared vocabulary: the one-retained-JSON-per-device docum
 | Talks to | How (topic / endpoint / file / import) | Relationship |
 |---|---|---|
 | PLUGIN.VISA (`apk-visa`) | Rust dependency, writes the device document | Shared Kernel (supplier) |
-| NODE.BareMetal `ORCHESTRATOR:hunter:VISA` | Rust dependency, `path = "../../../../LIBRARY/LIB.BENCH/SRC"` in its Cargo.toml | Shared Kernel (supplier) |
+| NODE.BareMetal `ORCHESTRATOR.hunter.VISA` | Rust dependency, `path = "../../../../LIBRARY/LIB.BENCH/SRC"` in its Cargo.toml | Shared Kernel (supplier) |
 | DISCOVERY.Engine workspace | member via symlink `members/LIB.BENCH`, `[patch]` of the git URL | Build host |
 | INSTRUMENTS library | reads `INSTRUMENT.<Family>/<Model>/<Model>.gui` and `.komand` from a directory the caller passes (`SRC/src/declared.rs:62`, `:131`) | Conformist to the instrument sheet format |
 | Bus topics `…/Protocols/visa/Device/<Type>/<Model>/<Dev>` | the payload shape this crate defines (`SRC/src/device_doc.rs:15-24`) | Published Language |
-| NODE.BareMetal Python (`Baremetal:Manager/instrument_launcher.py`) | re-implements part of the same rules in Python | Duplicate (see finding 4) |
+| NODE.BareMetal Python (`Baremetal.Manager/instrument_launcher.py`) | re-implements part of the same rules in Python | Duplicate (see finding 4) |
 
 ## Scorecard
 | Category | Score (0–3) | Finding |
@@ -30,4 +30,4 @@ Score key: 3 meets the standard · 2 minor gaps · 1 significant gaps · 0 absen
 ## Findings
 1. **Good — the shared kernel is deliberately small.** `SRC/Cargo.toml` allows `serde_json` and nothing else so a reader of the bench never links a driver; `SRC/src/lib.rs:1-20` names one writer and the readers in other processes for each module.
 2. **Good — deprecation of the old topic layout is explicit.** `SRC/src/device_doc.rs` keeps `LEGACY_LEAVES` only so a migrating publisher can wipe the ~26 fossil leaves of the old per-field layout once.
-3. **Rule re-implemented outside the crate (LIB side delivered).** `usable_serial` is re-implemented in `PODS/POD.THICK/NODE.BareMetal/SRC/Baremetal:Manager/instrument_launcher.py:515` with a wider list (`null`, `-`) and upper-casing. `SRC/vectors/usable_serial.json` is now the shared data both test against; the Python side is handed off.
+3. **Rule re-implemented outside the crate (LIB side delivered).** `usable_serial` is re-implemented in `PODS/POD.THICK/NODE.BareMetal/SRC/Baremetal.Manager/instrument_launcher.py:515` with a wider list (`null`, `-`) and upper-casing. `SRC/vectors/usable_serial.json` is now the shared data both test against; the Python side is handed off.

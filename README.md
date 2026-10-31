@@ -10,7 +10,7 @@ nothing.
 | **Crate** | `apkaudio-bench`, a member of the `PODS/POD.THICK/DISCOVERY.Engine/SRC` workspace |
 | **Container** | none — a library, like the other `LIB.*` repos |
 | **Written by** | `PLUGIN.VISA` (`apk-visa`) |
-| **Read by** | `NODE.BareMetal/SRC/Core/ORCHESTRATOR:hunter:VISA` |
+| **Read by** | `NODE.BareMetal/SRC/Core/ORCHESTRATOR.hunter.VISA` |
 
 - [Principles](Documentation/🏛Philosophy/PRINCIPLES.md) — the rules this crate keeps, and where it breaks them.
 - [Architecture](Documentation/🧩Manual and Artifacts/ARCHITECTURE.md) — the four modules and how a device document flows through them.

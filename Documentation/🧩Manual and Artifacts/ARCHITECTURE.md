@@ -9,7 +9,7 @@ apkaudio-bench = { path = "../../../LIBRARY/LIB.BENCH/SRC" }
 ```
 
 Current users: `PLUGIN.VISA/SRC/Cargo.toml` and
-`NODE.BareMetal/SRC/Core/ORCHESTRATOR:hunter:VISA/Cargo.toml`. The `apkaudio_visa` crate
+`NODE.BareMetal/SRC/Core/ORCHESTRATOR.hunter.VISA/Cargo.toml`. The `apkaudio_visa` crate
 re-exports `device_doc` under its old name.
 
 ## Parts
