@@ -29,3 +29,6 @@ LIB.BENCH is not shipped on its own. It is compiled into the binaries that depen
 - **Owned document store** — `device_doc::DocStore` (`new`, `global`, `put`, `patch`, `forget`, `get`, `distrust`, `adopt`); the free functions are now exactly `DocStore::global().…`, so PLUGIN.VISA and the orchestrator compile unchanged. Test `an_owned_store_is_not_the_global_one`. Callers moving to owned stores where two components share a process: handoff to PLUGIN.VISA filed.
 - **Tests run per change as one command** — no workflow here (the root CI verifies nothing on purpose); the check is `cargo test` in `SRC/`. Verified: a copy of `SRC/` alone builds and passes 21 tests offline; `cargo test -p apkaudio-bench` in the engine workspace passes too.
 - **Released `0.2.0`, tag `bench-v0.2.0`** — `SRC/Cargo.toml` bumped 0.1.0 → 0.2.0 (vectors, fixture, `DocStore`), annotated tag `bench-v0.2.0` published (owner-authorised 2026-10-31). PLUGIN.VISA repins `rev = "9b71355…"` → `tag = "bench-v0.2.0"` (handoff); the orchestrator keeps its path dependency inside the monorepo; engine/Core lock refresh handed to the coordinator. Verified: `git archive HEAD` of `SRC/` builds and tests alone.
+
+## Releases
+- **Released `2.0.0`, tag `v2.0.0`** (2026-11-01, ROAD-3452, the owner's V2) — no SDK pin; every manifest says 2.0.0; GitHub release `v2.0.0`.
