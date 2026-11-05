@@ -153,8 +153,12 @@ pub fn declared_devices(library: &Path) -> Vec<Declared> {
     let mut out = Vec::new();
     for (model, caps) in sheets {
         let Some(d) = caps.get("declared") else { continue };
+        // No `resource`: the block says how ANY declared box of this model
+        // behaves (listen-only, always on, on connect, on the hour), and WHICH
+        // box is one is declared by a person in the Rosetta Stone override,
+        // `INSTRUMENTS/_komand/declared.json` (owner, 2026-11-05) — read by the
+        // VISA plugin, not here. Not an installation, so nothing to say.
         let Some(resource) = d.get("resource").and_then(|r| r.as_str()) else {
-            println!("[instrument-gui] {model} declares itself with no resource — skipped");
             continue;
         };
         let Some(dtype) = caps.get("type").and_then(|t| t.as_str()) else {
