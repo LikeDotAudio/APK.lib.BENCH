@@ -17,6 +17,12 @@ LIB.BENCH is not shipped on its own. It is compiled into the binaries that depen
 - **After an edit:** rebuild the images above (`up-stack.sh` for the stacks that carry them), then
   commit in this repository and bump the submodule pointer in APK.audio.
 
+## Delivered 2026-11-04
+
+From this repository's own commits (the commit message is the record):
+
+- declared: a sheet's declared block with no resource is a model's behaviour, not an installation — skipped quietly (`c01a710`)
+
 ## Delivered 2026-10-31: portable file names (no `:` `|` or case twins)
 
 - The monorepo now checks out on Windows and macOS: no tracked name holds `<>:"|?*`, a trailing dot or space, a device name or a case-only twin. Colon folders became dot folders (the POD.x convention).
